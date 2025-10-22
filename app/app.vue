@@ -43,5 +43,21 @@ const providers = [
         </UModal>
       </template>
     </UHeader>
+    <USeparator class="opacity-0 h-20" />
+    <div class="max-w-3xl mx-auto px-4">
+      <UCard variant="subtle">
+        <template #default>
+          <div class="flex flex-col p-2">
+            <div class="self-center">
+              <UAvatar alt="US" size="3xl" />
+            </div>
+            <h2 class="pt-2">Name : John Doe</h2>
+            <p>Position : CEO</p>
+            <p>Company : Doe n Co</p>
+            <UButton> <div class="w-full text-center">Connect</div></UButton>
+          </div>
+        </template>
+      </UCard>
+    </div>
   </UApp>
 </template>
