@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { AuthFormField } from "@nuxt/ui";
+const loading = ref(false);
+const logged_in = ref(false);
 
 const fields: AuthFormField[] = [
   {
@@ -44,17 +46,38 @@ const providers = [
       </template>
     </UHeader>
     <USeparator class="opacity-0 h-20" />
-    <div class="max-w-3xl mx-auto px-4">
+    <div class="max-w-lg mx-auto px-4">
       <UCard variant="subtle">
         <template #default>
           <div class="flex flex-col p-2">
-            <div class="self-center">
-              <UAvatar alt="US" size="3xl" />
+            <div class="w-24 h-24 self-center">
+              <UAvatar alt="US" size="3xl" class="w-full h-full" />
             </div>
-            <h2 class="pt-2">Name : John Doe</h2>
-            <p>Position : CEO</p>
-            <p>Company : Doe n Co</p>
-            <UButton> <div class="w-full text-center">Connect</div></UButton>
+            <div class="flex justify-between">
+              <div class="text-lg ltr">Name</div>
+              <div v-if="loading" class="text-lg text-right rtl">
+                Loading...
+              </div>
+              <div v-else class="text-lg text-right rtl">John Doe</div>
+            </div>
+            <div class="flex justify-between">
+              <div class="text-lg ltr">Company</div>
+              <div v-if="loading" class="text-lg text-right rtl">
+                Loading...
+              </div>
+              <div v-else class="text-lg text-right rtl">Doe n Co</div>
+            </div>
+            <div class="flex justify-between">
+              <div class="text-lg ltr">Contact</div>
+              <div
+                v-if="loading || !logged_in"
+                class="w-30 h-7 bg-gray-300 blur-sm"
+              />
+              <div v-else class="text-lg">+62 8212 3456 7890</div>
+            </div>
+            <UButton class="my-3">
+              <div class="w-full text-center text-lg">Connect</div></UButton
+            >
           </div>
         </template>
       </UCard>
