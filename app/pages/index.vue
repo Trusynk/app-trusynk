@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { AuthFormField } from "@nuxt/ui";
+import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
+import { useRouter } from "#app";
+import z from "zod";
 const loading = ref(false);
 const logged_in = ref(false);
 
@@ -22,6 +24,27 @@ const providers = [
     },
   },
 ];
+
+const schema = z.object({
+  email: z.email("Invalid email"),
+});
+
+type Schema = z.output<typeof schema>;
+
+async function onSubmit(payload: FormSubmitEvent<Schema>) {
+  try {
+    const router = useRouter();
+    const { email } = payload.data;
+
+    const params = new URLSearchParams();
+
+    params.append("email", email);
+
+    await router.push({ path: "/sign-in", query: Object.fromEntries(params) });
+  } catch (error) {
+    console.log(error);
+  }
+}
 </script>
 
 <template>
@@ -39,6 +62,7 @@ const providers = [
                 description="Log in with Google or Insert your email"
                 :fields="fields"
                 :providers="providers"
+                @submit="onSubmit"
               />
             </div>
           </template>
