@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
-import z, { config, email } from "zod";
+import z from "zod";
 import { createClient } from "@supabase/supabase-js";
 
 const schema = z.object({
