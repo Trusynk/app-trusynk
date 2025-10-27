@@ -44,7 +44,12 @@ const providers = [
 const config = useRuntimeConfig();
 const supabase = createClient(
   config.public.supabaseUrl,
-  config.public.supabaseAnonKey
+  config.public.supabaseAnonKey,
+  {
+    db: {
+      schema: "DtTS",
+    },
+  }
 );
 
 const route = useRoute();
@@ -74,6 +79,11 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
           },
         },
       });
+      await supabase.from("user").insert({
+        email: data.email,
+        company: data.company,
+      });
+      navigateTo("/index");
     }
   } catch (error) {
     console.log(error);

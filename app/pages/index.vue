@@ -3,8 +3,34 @@ import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import { useRouter } from "#app";
 import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
-const loading = ref(false);
-const logged_in = ref(true);
+import { createClient } from "@supabase/supabase-js";
+const loading = ref(true);
+const logged_in = ref(false);
+
+const config = useRuntimeConfig();
+const supabase = createClient(
+  config.public.supabaseUrl,
+  config.public.supabaseAnonKey,
+  {
+    db: {
+      schema: "DtTS",
+    },
+  }
+);
+
+const { data, error } = await supabase.auth.getSession();
+if (data.session) {
+  loading.value = false;
+  logged_in.value = true;
+} else {
+  loading.value = false;
+
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("No user logged in");
+  }
+}
 
 const fields: AuthFormField[] = [
   {
@@ -70,16 +96,36 @@ const keyMap: Record<string, string> = {
 type Schema = z.output<typeof schema>;
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
+  const router = useRouter();
+  const toast = useToast();
+
   try {
-    const router = useRouter();
     const { email } = payload.data;
 
     const params = new URLSearchParams();
 
     params.append("email", email);
-
-    await router.push({ path: "/sign-in", query: Object.fromEntries(params) });
+    const res = await $fetch(`/api/check-email?${params.toString()}`, {
+      method: "get",
+    });
+    console.log(res);
+    if ("exist" in res) {
+      if (res.exist) {
+        await router.push({
+          path: "/login",
+          query: Object.fromEntries(params),
+        });
+      } else {
+        await router.push({
+          path: "/sign-in",
+          query: Object.fromEntries(params),
+        });
+      }
+    } else {
+      toast.add({ title: "Incorrect Response" });
+    }
   } catch (error) {
+    toast.add({ title: "Something Went Wrong" });
     console.log(error);
   }
 }
@@ -120,7 +166,14 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         <UCard variant="subtle">
           <template #default>
             <div class="flex flex-col p-2">
-              <div class="w-24 h-24 self-center">
+              <div v-if="loading" class="w-24 h-24 self-center">
+                <UAvatar
+                  icon="i-lucide-hourglass"
+                  size="3xl"
+                  class="w-full h-full"
+                />
+              </div>
+              <div v-else class="w-24 h-24 self-center">
                 <UAvatar
                   :src="logoUrl"
                   alt="T"
@@ -128,70 +181,70 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                   class="w-full h-full"
                 />
               </div>
-              <div class="flex justify-between">
-                <div class="text-lg ltr">Name</div>
-                <div v-if="loading" class="text-lg text-right rtl">
-                  Loading...
-                </div>
-                <div v-else class="text-lg text-right rtl">
-                  {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
-                </div>
+              <div v-if="loading" class="flex justify-center my-2">
+                Loading data....
               </div>
-              <div
-                v-for="(value, key) in valueSkeleton"
-                :key="key"
-                class="flex justify-between"
-              >
+              <div v-else>
+                <div class="flex justify-between">
+                  <div class="text-lg ltr">Name</div>
+                  <div class="text-lg text-right rtl">
+                    {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
+                  </div>
+                </div>
                 <div
-                  v-if="valueSkeleton[key] !== undefined"
-                  class="text-lg ltr"
+                  v-for="(value, key) in valueSkeleton"
+                  :key="key"
+                  class="flex justify-between"
                 >
-                  {{ keyMap[key] }}
-                </div>
+                  <div
+                    v-if="valueSkeleton[key] !== undefined"
+                    class="text-lg ltr"
+                  >
+                    {{ keyMap[key] }}
+                  </div>
 
-                <div v-if="loading" class="text-lg text-right rtl">
-                  Loading...
-                </div>
+                  <div class="text-lg text-right rtl">
+                    <template v-if="key === 'txFName' || key === 'txLName'">
+                      <!-- ignore case -->
+                    </template>
 
-                <div v-else class="text-lg text-right rtl">
-                  <template v-if="key === 'txFName' || key === 'txLName'">
-                    <!-- ignore case -->
-                  </template>
+                    <template v-else-if="key === 'txEmail'">
+                      <a
+                        :href="`mailto:${value}`"
+                        class="text-blue-500 underline"
+                        >{{ value }}</a
+                      >
+                    </template>
 
-                  <template v-else-if="key === 'txEmail'">
-                    <a
-                      :href="`mailto:${value}`"
-                      class="text-blue-500 underline"
-                      >{{ value }}</a
-                    >
-                  </template>
+                    <template v-else-if="key === 'txPhoneNumber'">
+                      <a
+                        :href="`tel:${value}`"
+                        class="text-blue-500 underline"
+                        >{{ value }}</a
+                      >
+                    </template>
 
-                  <template v-else-if="key === 'txPhoneNumber'">
-                    <a :href="`tel:${value}`" class="text-blue-500 underline">{{
-                      value
-                    }}</a>
-                  </template>
+                    <template v-else-if="key.toLowerCase().includes('url')">
+                      <a
+                        :href="
+                          value?.startsWith('http') ? value : 'https://' + value
+                        "
+                        target="_blank"
+                        class="text-blue-500 underline"
+                      >
+                        {{ value }}
+                      </a>
+                    </template>
 
-                  <template v-else-if="key.toLowerCase().includes('url')">
-                    <a
-                      :href="
-                        value?.startsWith('http') ? value : 'https://' + value
-                      "
-                      target="_blank"
-                      class="text-blue-500 underline"
-                    >
+                    <template v-else>
                       {{ value }}
-                    </a>
-                  </template>
-
-                  <template v-else>
-                    {{ value }}
-                  </template>
+                    </template>
+                  </div>
                 </div>
-              </div>
-              <div v-if="!logged_in" class="flex justify-between">
-                <div class="text-lg ltr">Contact</div>
-                <div class="w-30 h-7 bg-gray-300 blur-sm" />
+                <div v-if="!logged_in" class="flex justify-between">
+                  <div class="text-lg ltr">Contact</div>
+                  <div class="w-30 h-7 bg-gray-300 blur-sm" />
+                </div>
               </div>
               <div class="my-2">
                 <div v-if="logged_in">
