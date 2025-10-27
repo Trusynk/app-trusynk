@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import { useRouter } from "#app";
+import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
 const loading = ref(false);
 const logged_in = ref(true);
@@ -36,16 +37,16 @@ const dbValueNonLogin = {
 };
 
 const dbValueLogin = {
-  txFName: "John",
-  txLName: "Doe",
-  txBusinessName: "Doe n Co",
-  txEmail: "johndoe@doenco.com",
-  txPhoneNumber: "123456789",
-  txWebsiteUrl: "www.example.com",
-  txInstagramURL: "www.example.com",
-  txLinkedinURL: "www.example.com",
-  txFacebookURL: "www.example.com",
-  txThreadsURL: "www.example.com",
+  txFName: "Andrew",
+  txLName: "V",
+  txBusinessName: "Trusynk",
+  txEmail: "connect@trusynk.com",
+  txPhoneNumber: "+6287788895099",
+  txWebsiteUrl: "www.trusynk.com",
+  txInstagramURL: "instagram.com/trusynk",
+  txLinkedinURL: "linkedin.com/company/trusynk",
+  txFacebookURL: "facebook.com/trusynk",
+  txThreadsURL: undefined,
 };
 
 let valueSkeleton: Record<string, string | undefined> = {};
@@ -86,131 +87,146 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
 
 <template>
   <UApp>
-    <UHeader>
-      <template #title> Trusynk </template>
+    <div class="" style="background-color: #fcfdfe">
+      <UHeader>
+        <template #title> Trusynk </template>
 
-      <template #right>
-        <div v-if="!logged_in">
-          <UModal :ui="{ content: 'w-1/4' }">
-            <UButton label="Login" color="neutral" variant="outline" />
-            <template #content>
-              <div class="flex flex-col items-center justify-center gap-4 p-4">
-                <UAuthForm
-                  title="Login"
-                  description="Log in with Google or Insert your email"
-                  :fields="fields"
-                  :providers="providers"
-                  @submit="onSubmit"
-                />
-              </div>
-            </template>
-          </UModal>
-        </div>
-        <div v-else>
-          <UButton label="Dashboard" color="neutral" variant="outline" />
-        </div>
-      </template>
-    </UHeader>
-    <USeparator class="opacity-0 h-10" />
-    <div class="max-w-lg mx-auto px-4">
-      <UCard variant="subtle">
-        <template #default>
-          <div class="flex flex-col p-2">
-            <div class="w-24 h-24 self-center">
-              <UAvatar alt="US" size="3xl" class="w-full h-full" />
-            </div>
-            <div class="flex justify-between">
-              <div class="text-lg ltr">Name</div>
-              <div v-if="loading" class="text-lg text-right rtl">
-                Loading...
-              </div>
-              <div v-else class="text-lg text-right rtl">
-                {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
-              </div>
-            </div>
-            <div
-              v-for="(value, key) in valueSkeleton"
-              :key="key"
-              class="flex justify-between"
-            >
-              <div v-if="valueSkeleton[key] !== undefined" class="text-lg ltr">
-                {{ keyMap[key] }}
-              </div>
-
-              <div v-if="loading" class="text-lg text-right rtl">
-                Loading...
-              </div>
-
-              <div v-else class="text-lg text-right rtl">
-                <template v-if="key === 'txFName' || key === 'txLName'">
-                  <!-- ignore case -->
-                </template>
-
-                <template v-else-if="key === 'txEmail'">
-                  <a
-                    :href="`mailto:${value}`"
-                    class="text-blue-500 underline"
-                    >{{ value }}</a
-                  >
-                </template>
-
-                <template v-else-if="key === 'txPhoneNumber'">
-                  <a :href="`tel:${value}`" class="text-blue-500 underline">{{
-                    value
-                  }}</a>
-                </template>
-
-                <template v-else-if="key.toLowerCase().includes('url')">
-                  <a
-                    :href="
-                      value?.startsWith('http') ? value : 'https://' + value
-                    "
-                    target="_blank"
-                    class="text-blue-500 underline"
-                  >
-                    {{ value }}
-                  </a>
-                </template>
-
-                <template v-else>
-                  {{ value }}
-                </template>
-              </div>
-            </div>
-            <div v-if="!logged_in" class="flex justify-between">
-              <div class="text-lg ltr">Contact</div>
-              <div class="w-30 h-7 bg-gray-300 blur-sm" />
-            </div>
-            <div class="my-2">
-              <div v-if="logged_in">
-                <UButton class="w-full text-lg">
-                  <div class="w-full text-center">Connect</div></UButton
+        <template #right>
+          <div v-if="!logged_in">
+            <UModal :ui="{ content: 'w-1/4' }">
+              <UButton label="Login" color="neutral" variant="outline" />
+              <template #content>
+                <div
+                  class="flex flex-col items-center justify-center gap-4 p-4"
                 >
-              </div>
-              <div v-else>
-                <UModal :ui="{ content: 'w-1/4' }">
-                  <UButton class="w-full text-lg">
-                    <div class="w-full text-center">Connect</div></UButton
-                  >
-                  <template #content>
-                    <div
-                      class="flex flex-col items-center justify-center gap-4 p-4"
-                    >
-                      <UAuthForm
-                        title="Login"
-                        description="Log in with Google or Insert your email"
-                        :fields="fields"
-                        :providers="providers"
-                        @submit="onSubmit"
-                      />
-                    </div>
-                  </template>
-                </UModal>
-              </div>
-            </div>
+                  <UAuthForm
+                    title="Login"
+                    description="Log in with Google or Insert your email"
+                    :fields="fields"
+                    :providers="providers"
+                    @submit="onSubmit"
+                  />
+                </div>
+              </template>
+            </UModal>
+          </div>
+          <div v-else>
+            <UButton label="Dashboard" color="neutral" variant="outline" />
           </div>
         </template>
-      </UCard>
+      </UHeader>
+      <USeparator class="opacity-0 h-10" />
+      <div class="max-w-lg mx-auto px-4">
+        <UCard variant="subtle">
+          <template #default>
+            <div class="flex flex-col p-2">
+              <div class="w-24 h-24 self-center">
+                <UAvatar
+                  :src="logoUrl"
+                  alt="T"
+                  size="3xl"
+                  class="w-full h-full"
+                />
+              </div>
+              <div class="flex justify-between">
+                <div class="text-lg ltr">Name</div>
+                <div v-if="loading" class="text-lg text-right rtl">
+                  Loading...
+                </div>
+                <div v-else class="text-lg text-right rtl">
+                  {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
+                </div>
+              </div>
+              <div
+                v-for="(value, key) in valueSkeleton"
+                :key="key"
+                class="flex justify-between"
+              >
+                <div
+                  v-if="valueSkeleton[key] !== undefined"
+                  class="text-lg ltr"
+                >
+                  {{ keyMap[key] }}
+                </div>
+
+                <div v-if="loading" class="text-lg text-right rtl">
+                  Loading...
+                </div>
+
+                <div v-else class="text-lg text-right rtl">
+                  <template v-if="key === 'txFName' || key === 'txLName'">
+                    <!-- ignore case -->
+                  </template>
+
+                  <template v-else-if="key === 'txEmail'">
+                    <a
+                      :href="`mailto:${value}`"
+                      class="text-blue-500 underline"
+                      >{{ value }}</a
+                    >
+                  </template>
+
+                  <template v-else-if="key === 'txPhoneNumber'">
+                    <a :href="`tel:${value}`" class="text-blue-500 underline">{{
+                      value
+                    }}</a>
+                  </template>
+
+                  <template v-else-if="key.toLowerCase().includes('url')">
+                    <a
+                      :href="
+                        value?.startsWith('http') ? value : 'https://' + value
+                      "
+                      target="_blank"
+                      class="text-blue-500 underline"
+                    >
+                      {{ value }}
+                    </a>
+                  </template>
+
+                  <template v-else>
+                    {{ value }}
+                  </template>
+                </div>
+              </div>
+              <div v-if="!logged_in" class="flex justify-between">
+                <div class="text-lg ltr">Contact</div>
+                <div class="w-30 h-7 bg-gray-300 blur-sm" />
+              </div>
+              <div class="my-2">
+                <div v-if="logged_in">
+                  <UButton
+                    style="background-color: #002fbd; color: #fcfdfe"
+                    class="w-full text-lg"
+                  >
+                    <div class="w-full text-center">Connect</div></UButton
+                  >
+                </div>
+                <div v-else>
+                  <UModal :ui="{ content: 'w-1/4' }">
+                    <UButton class="w-full text-lg">
+                      <div class="w-full text-center">Connect</div></UButton
+                    >
+                    <template #content>
+                      <div
+                        class="flex flex-col items-center justify-center gap-4 p-4"
+                      >
+                        <UAuthForm
+                          title="Login"
+                          description="Log in with Google or Insert your email"
+                          :fields="fields"
+                          :providers="providers"
+                          @submit="onSubmit"
+                        />
+                      </div>
+                    </template>
+                  </UModal>
+                </div>
+              </div>
+            </div>
+          </template>
+        </UCard>
+      </div>
     </div>
   </UApp>
 </template>
