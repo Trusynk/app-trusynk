@@ -1,21 +1,51 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
+import { createClient } from "@supabase/supabase-js";
 import z from "zod";
+
+const nullify = <T extends z.ZodTypeAny>(schema: T) =>
+  schema.transform((v) => (v === "" ? null : v));
+
+const nullifyableUrl = z
+  .string()
+  .transform((v) => (v === "" ? null : v))
+  .nullable()
+  .refine((v) => v === null || z.url().safeParse(v).success, {
+    message: "Invalid URL",
+  });
 
 const open = ref(false);
 const modalOpen = ref(false);
+
+const config = useRuntimeConfig();
+const supabase = createClient(
+  config.public.supabaseUrl,
+  config.public.supabaseAnonKey,
+  {
+    db: {
+      schema: "DtTS",
+    },
+  }
+);
+
+const { data, error } = await supabase.auth.getUser();
+if (error) {
+  console.log(error);
+}
+
+console.log(data);
 
 const schema = z.object({
   txFName: z.string().max(80),
   txLName: z.string().max(80),
   txBusinessName: z.string().max(180),
   txEmail: z.email("Invalid email"),
-  txPhonenumber: z.string().max(16),
-  txWebsiteUrl: z.url("Invalid URL"),
-  txInstagramURL: z.url("Invalid URL"),
-  txLinkedinURL: z.url("Invalid URL"),
-  txFacebookURL: z.url("Invalid URL"),
-  txThreadsURL: z.url("Invalid URL"),
+  txPhoneNumber: nullify(z.string().max(16)).nullable(),
+  txWebsiteURL: nullifyableUrl,
+  txInstagramURL: nullifyableUrl,
+  txLinkedInURL: nullifyableUrl,
+  txFacebookURL: nullifyableUrl,
+  txThreadsURL: nullifyableUrl,
 });
 
 type Schema = z.infer<typeof schema>;
@@ -23,17 +53,21 @@ type Schema = z.infer<typeof schema>;
 const state = reactive({
   txFName: "",
   txLName: "",
-  txBusinessName: "",
+  txBusinessName: data.user?.user_metadata.company,
   txEmail: "",
   txPhoneNumber: "",
-  txWebsiteUrl: "",
+  txWebsiteURL: "",
   txInstagramURL: "",
-  txLinkedinURL: "",
+  txLinkedInURL: "",
   txFacebookURL: "",
   txThreadsURL: "",
 });
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {}
+async function onSubmit() {
+  const { error } = await supabase.from("user").insert(state);
+  if (error) console.log(error);
+  console.log("submitted");
+}
 </script>
 
 <template>
@@ -115,9 +149,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {}
                     placeholder="081234567890"
                   />
                 </UFormField>
-                <UFormField label="Website" name="txWebsiteUrl">
+                <UFormField label="Website" name="txWebsiteURL">
                   <UInput
-                    v-model="state.txWebsiteUrl"
+                    v-model="state.txWebsiteURL"
                     type="url"
                     class="w-full"
                     placeholder="www.example.com"
@@ -131,9 +165,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {}
                     placeholder="www.example.com"
                   />
                 </UFormField>
-                <UFormField label="Linkedin Link" name="txLinkedinURL">
+                <UFormField label="Linkedin Link" name="txLinkedInURL">
                   <UInput
-                    v-model="state.txLinkedinURL"
+                    v-model="state.txLinkedInURL"
                     type="url"
                     class="w-full"
                     placeholder="www.example.com"
@@ -155,15 +189,15 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {}
                     placeholder="www.example.com"
                   />
                 </UFormField>
-                <div class="flex justify-end">
-                  <UButton
-                    label="Cancel"
-                    color="neutral"
-                    variant="outline"
-                    @click="close"
-                  />
-                  <UButton class="ml-2" label="Submit" />
-                </div>
+                <!-- <div class="flex justify-end"> -->
+                <UButton
+                  label="Cancel"
+                  color="neutral"
+                  variant="outline"
+                  @click="close"
+                />
+                <UButton class="ml-2" label="Submit" type="submit" />
+                <!-- </div> -->
               </UForm>
             </template>
           </UModal>

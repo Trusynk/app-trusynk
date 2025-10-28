@@ -157,7 +157,12 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
             </UModal>
           </div>
           <div v-else>
-            <UButton label="Dashboard" color="neutral" variant="outline" />
+            <UButton
+              label="Dashboard"
+              color="neutral"
+              variant="outline"
+              @click="navigateTo('/dashboard')"
+            />
           </div>
         </template>
       </UHeader>
