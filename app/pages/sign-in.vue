@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import z from "zod";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "~/plugins/supabase_client";
+import { init } from "@paralleldrive/cuid2";
 
 const schema = z.object({
   password: z
@@ -11,6 +12,8 @@ const schema = z.object({
     .string("Company name is required")
     .length(80, "Max Length Exceeded"),
 });
+
+const toast = useToast();
 
 type Schema = z.output<typeof schema>;
 
@@ -41,19 +44,13 @@ const providers = [
   },
 ];
 
-const config = useRuntimeConfig();
-const supabase = createClient(
-  config.public.supabaseUrl,
-  config.public.supabaseAnonKey,
-  {
-    db: {
-      schema: "DtTS",
-    },
-  }
-);
+const createId = init({
+  random: Math.random,
+  length: 10,
+  fingerprint: "a-custom-host-fingerprint",
+});
 
 const route = useRoute();
-const toast = useToast();
 const emailAddress = route.query.email;
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
@@ -76,14 +73,17 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         options: {
           data: {
             company: data.company,
+            public_id: createId(),
           },
         },
       });
+      // TODO : this obviously doesn't work atm
       await supabase.from("user").insert({
         email: data.email,
         company: data.company,
+        // add cuid
       });
-      navigateTo("/index");
+      toast.add({ title: "Check Your email for confirmation!" });
     }
   } catch (error) {
     console.log(error);
