@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from "@nuxt/ui";
-import { createClient } from "@supabase/supabase-js";
 import z from "zod";
 
 const nullify = <T extends z.ZodTypeAny>(schema: T) =>
   schema.transform((v) => (v === "" ? null : v));
 
+const { $supabase } = useNuxtApp();
 const nullifyableUrl = z
   .string()
   .transform((v) => (v === "" ? null : v))
@@ -16,25 +15,13 @@ const nullifyableUrl = z
 
 const open = ref(false);
 const modalOpen = ref(false);
+const toast = useToast();
 
-const config = useRuntimeConfig();
-const supabase = createClient(
-  config.public.supabaseUrl,
-  config.public.supabaseAnonKey,
-  {
-    db: {
-      schema: "DtTS",
-    },
-  }
-);
-
-const { data, error } = await supabase.auth.getUser();
+const { data, error } = await $supabase.auth.getUser();
+console.log(data);
 if (error) {
   console.log(error);
 }
-
-console.log(data);
-
 const schema = z.object({
   txFName: z.string().max(80),
   txLName: z.string().max(80),
@@ -50,11 +37,11 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>;
 
-const state = reactive({
+let state = reactive({
   txFName: "",
   txLName: "",
   txBusinessName: data.user?.user_metadata.company,
-  txEmail: "",
+  txEmail: data.user?.email,
   txPhoneNumber: "",
   txWebsiteURL: "",
   txInstagramURL: "",
@@ -63,10 +50,37 @@ const state = reactive({
   txThreadsURL: "",
 });
 
+if (data) {
+  const { data: userData, error: userError } = await $supabase
+    .from("user")
+    .select("*")
+    .eq("cuPublicID", data.user?.user_metadata.public_id);
+
+  if (userError) {
+    console.log(userError);
+  }
+
+  if (userData && userData.length > 0 && userData[0]) {
+    const supabaseState = userData[0];
+    delete supabaseState.cuPublicID;
+    state = supabaseState;
+  }
+}
+
 async function onSubmit() {
-  const { error } = await supabase.from("user").insert(state);
+  const { error } = await $supabase
+    .from("user")
+    .upsert({ ...state, cuPublicID: data.user?.user_metadata.public_id })
+    .eq("cuPublicID", data.user?.user_metadata.public_id);
   if (error) console.log(error);
-  console.log("submitted");
+}
+async function logout() {
+  const { error } = await $supabase.auth.signOut();
+  if (error) {
+    toast.add({ title: "Something Went Wrong" });
+  } else {
+    navigateTo("/", { replace: true });
+  }
 }
 </script>
 
@@ -90,20 +104,26 @@ async function onSubmit() {
               variant="outline"
               @click="close"
             />
-            <UButton label="Log off" color="error" />
+            <UButton label="Log off" color="error" @click="logout" />
           </template>
         </UModal>
       </template>
     </UHeader>
+    <div class="text-center mt-4">
+      Your Trusynk Link is on trusynk.com/profile/{{
+        data.user?.user_metadata.public_id
+      }}
+    </div>
     <div class="flex items-center justify-evenly mt-6">
       <UCard>
-        <template #header> Complete your profile</template>
+        <template #header> Configure your profile</template>
         <template #default>
-          Click This Button to complete your profile</template
+          Wanna update your info? Click this button to configure your
+          profile</template
         >
         <template #footer>
           <UModal v-model:open="modalOpen" title="Add your Info">
-            <UButton label="Complete" />
+            <UButton label="Configure" />
 
             <template #body="{ close }">
               <UForm
