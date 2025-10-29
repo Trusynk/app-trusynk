@@ -3,22 +3,11 @@ import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import { useRouter } from "#app";
 import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
-import { createClient } from "@supabase/supabase-js";
+const { $supabase } = useNuxtApp();
 const loading = ref(true);
 const logged_in = ref(false);
 
-const config = useRuntimeConfig();
-const supabase = createClient(
-  config.public.supabaseUrl,
-  config.public.supabaseAnonKey,
-  {
-    db: {
-      schema: "DtTS",
-    },
-  }
-);
-
-const { data, error } = await supabase.auth.getSession();
+const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
   loading.value = false;
   logged_in.value = true;
@@ -196,54 +185,58 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                     {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
                   </div>
                 </div>
-                <div
-                  v-for="(value, key) in valueSkeleton"
-                  :key="key"
-                  class="flex justify-between"
-                >
+                <div :key="`contacts-${logged_in ? 'in' : 'out'}`">
                   <div
-                    v-if="valueSkeleton[key] !== undefined"
-                    class="text-lg ltr"
+                    v-for="(value, key, index) in valueSkeleton"
+                    :key="`${key}-${index}-${String(value)}`"
+                    class="flex justify-between"
                   >
-                    {{ keyMap[key] }}
-                  </div>
+                    <div
+                      v-if="valueSkeleton[key] !== undefined"
+                      class="text-lg ltr"
+                    >
+                      {{ keyMap[key] }}
+                    </div>
 
-                  <div class="text-lg text-right rtl">
-                    <template v-if="key === 'txFName' || key === 'txLName'">
-                      <!-- ignore case -->
-                    </template>
+                    <div class="text-lg text-right rtl">
+                      <template v-if="key === 'txFName' || key === 'txLName'">
+                        <!-- ignore case -->
+                      </template>
 
-                    <template v-else-if="key === 'txEmail'">
-                      <a
-                        :href="`mailto:${value}`"
-                        class="text-blue-500 underline"
-                        >{{ value }}</a
-                      >
-                    </template>
+                      <template v-else-if="key === 'txEmail'">
+                        <a
+                          :href="`mailto:${value}`"
+                          class="text-blue-500 underline"
+                          >{{ value }}</a
+                        >
+                      </template>
 
-                    <template v-else-if="key === 'txPhoneNumber'">
-                      <a
-                        :href="`tel:${value}`"
-                        class="text-blue-500 underline"
-                        >{{ value }}</a
-                      >
-                    </template>
+                      <template v-else-if="key === 'txPhoneNumber'">
+                        <a
+                          :href="`tel:${value}`"
+                          class="text-blue-500 underline"
+                          >{{ value }}</a
+                        >
+                      </template>
 
-                    <template v-else-if="key.toLowerCase().includes('url')">
-                      <a
-                        :href="
-                          value?.startsWith('http') ? value : 'https://' + value
-                        "
-                        target="_blank"
-                        class="text-blue-500 underline"
-                      >
+                      <template v-else-if="key.toLowerCase().includes('url')">
+                        <a
+                          :href="
+                            value?.startsWith('http')
+                              ? value
+                              : 'https://' + value
+                          "
+                          target="_blank"
+                          class="text-blue-500 underline"
+                        >
+                          {{ value }}
+                        </a>
+                      </template>
+
+                      <template v-else>
                         {{ value }}
-                      </a>
-                    </template>
-
-                    <template v-else>
-                      {{ value }}
-                    </template>
+                      </template>
+                    </div>
                   </div>
                 </div>
                 <div v-if="!logged_in" class="flex justify-between">

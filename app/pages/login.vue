@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import z from "zod";
-import { createClient } from "@supabase/supabase-js";
+const { $supabase } = useNuxtApp();
 
 const schema = z.object({
   password: z
@@ -21,17 +21,6 @@ const fields: AuthFormField[] = [
   },
 ];
 
-const config = useRuntimeConfig();
-const supabase = createClient(
-  config.public.supabaseUrl,
-  config.public.supabaseAnonKey,
-  {
-    db: {
-      schema: "DtTS",
-    },
-  }
-);
-
 const route = useRoute();
 const toast = useToast();
 const emailAddress = route.query.email;
@@ -49,7 +38,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     } else {
       data.email = emailAddress.toString() ?? "";
 
-      await supabase.auth.signInWithPassword({
+      await $supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });

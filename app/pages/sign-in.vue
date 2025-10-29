@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import z from "zod";
-import { supabase } from "~/plugins/supabase_client";
 import { init } from "@paralleldrive/cuid2";
+
+const { $supabase } = useNuxtApp();
 
 const schema = z.object({
   password: z
@@ -67,7 +68,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       data.email = emailAddress.toString() ?? "";
       console.log(emailAddress);
 
-      await supabase.auth.signUp({
+      await $supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -76,12 +77,6 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
             public_id: createId(),
           },
         },
-      });
-      // TODO : this obviously doesn't work atm
-      await supabase.from("user").insert({
-        email: data.email,
-        company: data.company,
-        // add cuid
       });
       toast.add({ title: "Check Your email for confirmation!" });
     }
