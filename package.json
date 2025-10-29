@@ -20,6 +20,7 @@
     "@oxc-minify/binding-wasm32-wasi": "0.87.0",
     "@oxc-parser/binding-wasm32-wasi": "0.87.0",
     "@oxc-transform/binding-wasm32-wasi": "0.87.0",
+    "@paralleldrive/cuid2": "^3.0.4",
     "@supabase/supabase-js": "^2.76.1",
     "@tailwindcss/vite": "^4.1.14",
     "@unhead/vue": "^2.0.19",
