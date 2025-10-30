@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import z from "zod";
 
+const isHydrated = ref(false);
+
 const nullify = <T extends z.ZodTypeAny>(schema: T) =>
   schema.transform((v) => (v === "" ? null : v));
 
@@ -67,6 +69,10 @@ if (data) {
   }
 }
 
+onMounted(() => {
+  isHydrated.value = true;
+});
+
 async function onSubmit() {
   const { error } = await $supabase
     .from("user")
@@ -109,11 +115,12 @@ async function logout() {
         </UModal>
       </template>
     </UHeader>
-    <div class="text-center mt-4">
+    <div v-if="isHydrated" class="text-center mt-4">
       Your Trusynk Link is on trusynk.com/profile/{{
         data.user?.user_metadata.public_id
       }}
     </div>
+    <div v-else class="text-center mt-4">Hold on we are still loading</div>
     <div class="flex items-center justify-evenly mt-6">
       <UCard>
         <template #header> Configure your profile</template>

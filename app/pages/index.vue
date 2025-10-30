@@ -7,6 +7,9 @@ const { $supabase } = useNuxtApp();
 const loading = ref(true);
 const logged_in = ref(false);
 
+const isHydrated = ref(false);
+
+// TODO : refactor to dynamic ID
 const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
   loading.value = false;
@@ -84,6 +87,10 @@ const keyMap: Record<string, string> = {
 
 type Schema = z.output<typeof schema>;
 
+onMounted(() => {
+  isHydrated.value = true;
+});
+
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
   const router = useRouter();
   const toast = useToast();
@@ -127,31 +134,33 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         <template #title> Trusynk </template>
 
         <template #right>
-          <div v-if="!logged_in">
-            <UModal :ui="{ content: 'w-1/4' }">
-              <UButton label="Login" color="neutral" variant="outline" />
-              <template #content>
-                <div
-                  class="flex flex-col items-center justify-center gap-4 p-4"
-                >
-                  <UAuthForm
-                    title="Login"
-                    description="Log in with Google or Insert your email"
-                    :fields="fields"
-                    :providers="providers"
-                    @submit="onSubmit"
-                  />
-                </div>
-              </template>
-            </UModal>
-          </div>
-          <div v-else>
-            <UButton
-              label="Dashboard"
-              color="neutral"
-              variant="outline"
-              @click="navigateTo('/dashboard')"
-            />
+          <div v-if="isHydrated">
+            <div v-if="!logged_in">
+              <UModal :ui="{ content: 'w-1/4' }">
+                <UButton label="Login" color="neutral" variant="outline" />
+                <template #content>
+                  <div
+                    class="flex flex-col items-center justify-center gap-4 p-4"
+                  >
+                    <UAuthForm
+                      title="Login"
+                      description="Log in with Google or Insert your email"
+                      :fields="fields"
+                      :providers="providers"
+                      @submit="onSubmit"
+                    />
+                  </div>
+                </template>
+              </UModal>
+            </div>
+            <div v-else>
+              <UButton
+                label="Dashboard"
+                color="neutral"
+                variant="outline"
+                @click="navigateTo('/dashboard')"
+              />
+            </div>
           </div>
         </template>
       </UHeader>
@@ -160,7 +169,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         <UCard variant="subtle">
           <template #default>
             <div class="flex flex-col p-2">
-              <div v-if="loading" class="w-24 h-24 self-center">
+              <div v-if="loading || !isHydrated" class="w-24 h-24 self-center">
                 <UAvatar
                   icon="i-lucide-hourglass"
                   size="3xl"
@@ -175,73 +184,78 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                   class="w-full h-full"
                 />
               </div>
-              <div v-if="loading" class="flex justify-center my-2">
-                Loading data....
+              <div v-if="!isHydrated" class="flex justify-center text-lg mt-2">
+                Loading...
               </div>
               <div v-else>
-                <div class="flex justify-between">
-                  <div class="text-lg ltr">Name</div>
-                  <div class="text-lg text-right rtl">
-                    {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
-                  </div>
+                <div v-if="loading" class="flex justify-center my-2">
+                  Loading data....
                 </div>
-                <div :key="`contacts-${logged_in ? 'in' : 'out'}`">
-                  <div
-                    v-for="(value, key, index) in valueSkeleton"
-                    :key="`${key}-${index}-${String(value)}`"
-                    class="flex justify-between"
-                  >
-                    <div
-                      v-if="valueSkeleton[key] !== undefined"
-                      class="text-lg ltr"
-                    >
-                      {{ keyMap[key] }}
-                    </div>
-
+                <div v-else>
+                  <div class="flex justify-between">
+                    <div class="text-lg ltr">Name</div>
                     <div class="text-lg text-right rtl">
-                      <template v-if="key === 'txFName' || key === 'txLName'">
-                        <!-- ignore case -->
-                      </template>
-
-                      <template v-else-if="key === 'txEmail'">
-                        <a
-                          :href="`mailto:${value}`"
-                          class="text-blue-500 underline"
-                          >{{ value }}</a
-                        >
-                      </template>
-
-                      <template v-else-if="key === 'txPhoneNumber'">
-                        <a
-                          :href="`tel:${value}`"
-                          class="text-blue-500 underline"
-                          >{{ value }}</a
-                        >
-                      </template>
-
-                      <template v-else-if="key.toLowerCase().includes('url')">
-                        <a
-                          :href="
-                            value?.startsWith('http')
-                              ? value
-                              : 'https://' + value
-                          "
-                          target="_blank"
-                          class="text-blue-500 underline"
-                        >
-                          {{ value }}
-                        </a>
-                      </template>
-
-                      <template v-else>
-                        {{ value }}
-                      </template>
+                      {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
                     </div>
                   </div>
-                </div>
-                <div v-if="!logged_in" class="flex justify-between">
-                  <div class="text-lg ltr">Contact</div>
-                  <div class="w-30 h-7 bg-gray-300 blur-sm" />
+                  <div :key="`contacts-${logged_in ? 'in' : 'out'}`">
+                    <div
+                      v-for="(value, key, index) in valueSkeleton"
+                      :key="`${key}-${index}-${String(value)}`"
+                      class="flex justify-between"
+                    >
+                      <div
+                        v-if="valueSkeleton[key] !== undefined"
+                        class="text-lg ltr"
+                      >
+                        {{ keyMap[key] }}
+                      </div>
+
+                      <div class="text-lg text-right rtl">
+                        <template v-if="key === 'txFName' || key === 'txLName'">
+                          <!-- ignore case -->
+                        </template>
+
+                        <template v-else-if="key === 'txEmail'">
+                          <a
+                            :href="`mailto:${value}`"
+                            class="text-blue-500 underline"
+                            >{{ value }}</a
+                          >
+                        </template>
+
+                        <template v-else-if="key === 'txPhoneNumber'">
+                          <a
+                            :href="`tel:${value}`"
+                            class="text-blue-500 underline"
+                            >{{ value }}</a
+                          >
+                        </template>
+
+                        <template v-else-if="key.toLowerCase().includes('url')">
+                          <a
+                            :href="
+                              value?.startsWith('http')
+                                ? value
+                                : 'https://' + value
+                            "
+                            target="_blank"
+                            class="text-blue-500 underline"
+                          >
+                            {{ value }}
+                          </a>
+                        </template>
+
+                        <template v-else>
+                          {{ value }}
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="!logged_in" class="flex justify-between">
+                    <div class="text-lg ltr">Contact</div>
+                    <div class="w-30 h-7 bg-gray-300 blur-sm" />
+                  </div>
                 </div>
               </div>
               <div class="my-2">
