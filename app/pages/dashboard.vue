@@ -2,7 +2,7 @@
 import z from "zod";
 
 const isHydrated = ref(false);
-
+// TODO : protect to be only viewed with login
 const nullify = <T extends z.ZodTypeAny>(schema: T) =>
   schema.transform((v) => (v === "" ? null : v));
 
@@ -18,6 +18,7 @@ const nullifyableUrl = z
 const open = ref(false);
 const modalOpen = ref(false);
 const toast = useToast();
+const userID = ref(null);
 
 const { data, error } = await $supabase.auth.getUser();
 console.log(data);
@@ -35,6 +36,11 @@ const schema = z.object({
   txLinkedInURL: nullifyableUrl,
   txFacebookURL: nullifyableUrl,
   txThreadsURL: nullifyableUrl,
+  txUsername: z
+    .string()
+    .max(40)
+    .regex(/^[A-Za-z0-9\-_.~]+$/, "Must be URL Safe")
+    .toLowerCase(),
 });
 
 type Schema = z.infer<typeof schema>;
@@ -50,13 +56,14 @@ let state = reactive({
   txLinkedInURL: "",
   txFacebookURL: "",
   txThreadsURL: "",
+  txUsername: data.user?.user_metadata.username,
 });
 
 if (data) {
   const { data: userData, error: userError } = await $supabase
     .from("user")
     .select("*")
-    .eq("cuPublicID", data.user?.user_metadata.public_id);
+    .eq("uiUserId", data.user?.id);
 
   if (userError) {
     console.log(userError);
@@ -64,8 +71,8 @@ if (data) {
 
   if (userData && userData.length > 0 && userData[0]) {
     const supabaseState = userData[0];
-    delete supabaseState.cuPublicID;
     state = supabaseState;
+    userID.value = supabaseState.uiUserId;
   }
 }
 
@@ -74,11 +81,28 @@ onMounted(() => {
 });
 
 async function onSubmit() {
-  const { error } = await $supabase
+  const { data: userData, error: userError } = await $supabase
     .from("user")
-    .upsert({ ...state, cuPublicID: data.user?.user_metadata.public_id })
-    .eq("cuPublicID", data.user?.user_metadata.public_id);
-  if (error) console.log(error);
+    .select("txUsername")
+    .eq("txUsername", state.txUsername)
+    .neq("uiUserId", data.user?.id);
+  if (userError) {
+    toast.add({ title: "Something went wrong" });
+    console.log(userError);
+  }
+  if (userData && userData.length > 0) {
+    toast.add({ title: "Username already taken" });
+  }
+  if (!userError) {
+    const { error } = await $supabase
+      .from("user")
+      .upsert({ ...state, txUsername: state.txUsername })
+      .eq("uiUserId", userID.value);
+    if (error) {
+      toast.add({ title: "Something went wrong" });
+      console.log(error);
+    }
+  }
 }
 async function logout() {
   const { error } = await $supabase.auth.signOut();
@@ -116,9 +140,7 @@ async function logout() {
       </template>
     </UHeader>
     <div v-if="isHydrated" class="text-center mt-4">
-      Your Trusynk Link is on trusynk.com/profile/{{
-        data.user?.user_metadata.public_id
-      }}
+      Your Trusynk Link is on trusynk.com/profile/{{ state.txUsername }}
     </div>
     <div v-else class="text-center mt-4">Hold on we are still loading</div>
     <div class="flex items-center justify-evenly mt-6">
@@ -214,6 +236,13 @@ async function logout() {
                     type="url"
                     class="w-full"
                     placeholder="www.example.com"
+                  />
+                </UFormField>
+                <UFormField label="Username" name="txUsername">
+                  <UInput
+                    v-model="state.txUsername"
+                    class="w-full"
+                    placeholder="johndoe"
                   />
                 </UFormField>
                 <!-- <div class="flex justify-end"> -->

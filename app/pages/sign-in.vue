@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import z from "zod";
-import { init } from "@paralleldrive/cuid2";
-
 const { $supabase } = useNuxtApp();
+
+// TODO : add google login
 
 const schema = z.object({
   password: z
     .string("Password is required")
     .min(8, "Must be at least 8 characters"),
+  username: z
+    .string("Username is required")
+    .regex(/^[A-Za-z0-9\-_.~]+$/, "Must be URL Safe")
+    .length(40, "Max Length Exceeded"),
   company: z
     .string("Company name is required")
     .length(80, "Max Length Exceeded"),
@@ -24,6 +28,13 @@ const fields: AuthFormField[] = [
     type: "password",
     label: "Password",
     placeholder: "Enter your password",
+    required: true,
+  },
+  {
+    name: "username",
+    type: "text",
+    label: "Username",
+    placeholder: "Enter your username (no spaces and special character)",
     required: true,
   },
   {
@@ -45,17 +56,11 @@ const providers = [
   },
 ];
 
-const createId = init({
-  random: Math.random,
-  length: 10,
-  fingerprint: "a-custom-host-fingerprint",
-});
-
 const route = useRoute();
 const emailAddress = route.query.email;
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  const data = { email: "", ...payload.data };
+  const uploadData = { email: "", ...payload.data };
 
   try {
     if (
@@ -65,20 +70,34 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     ) {
       toast.add({ title: "Email Error", description: "Email is missing" });
     } else {
-      data.email = emailAddress.toString() ?? "";
+      uploadData.email = emailAddress.toString() ?? "";
       console.log(emailAddress);
 
-      await $supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            company: data.company,
-            public_id: createId(),
+      const { data, error } = await $supabase
+        .from("users")
+        .select("txUsername")
+        .eq("txUsername", uploadData.username);
+
+      if (error) console.log(error);
+      else if (data.length > 0) {
+        toast.add({ title: "Username already taken!" });
+      } else {
+        const { error } = await $supabase.auth.signUp({
+          email: uploadData.email,
+          password: uploadData.password,
+          options: {
+            data: {
+              company: uploadData.company,
+              username: uploadData.username,
+            },
           },
-        },
-      });
-      toast.add({ title: "Check Your email for confirmation!" });
+        });
+        if (error) {
+          toast.add({ title: "Something went wrong" });
+        } else {
+          toast.add({ title: "Check Your email for confirmation!" });
+        }
+      }
     }
   } catch (error) {
     console.log(error);
