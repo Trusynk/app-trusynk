@@ -5,7 +5,6 @@ import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
 const { $supabase } = useNuxtApp();
 const loading = ref(true);
-const logged_in = ref(false);
 
 const isHydrated = ref(false);
 
@@ -13,7 +12,6 @@ const isHydrated = ref(false);
 const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
   loading.value = false;
-  logged_in.value = true;
 } else {
   loading.value = false;
 
@@ -48,12 +46,6 @@ const schema = z.object({
   email: z.email("Invalid email"),
 });
 
-const dbValueNonLogin = {
-  txFName: "John",
-  txLName: "Doe",
-  txBusinessName: "Doe n Co",
-};
-
 const dbValueLogin = {
   txFName: "Andrew",
   txLName: "V",
@@ -67,13 +59,6 @@ const dbValueLogin = {
   txThreadsURL: undefined,
 };
 
-let valueSkeleton: Record<string, string | undefined> = {};
-
-if (logged_in.value) {
-  valueSkeleton = dbValueLogin;
-} else {
-  valueSkeleton = dbValueNonLogin;
-}
 const keyMap: Record<string, string> = {
   txBusinessName: "Business Name",
   txEmail: "Email Address",
@@ -134,34 +119,12 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         <template #title> Trusynk </template>
 
         <template #right>
-          <div v-if="isHydrated">
-            <div v-if="!logged_in">
-              <UModal :ui="{ content: 'w-1/4' }">
-                <UButton label="Login" color="neutral" variant="outline" />
-                <template #content>
-                  <div
-                    class="flex flex-col items-center justify-center gap-4 p-4"
-                  >
-                    <UAuthForm
-                      title="Login"
-                      description="Log in with Google or Insert your email"
-                      :fields="fields"
-                      :providers="providers"
-                      @submit="onSubmit"
-                    />
-                  </div>
-                </template>
-              </UModal>
-            </div>
-            <div v-else>
-              <UButton
-                label="Dashboard"
-                color="neutral"
-                variant="outline"
-                @click="navigateTo('/dashboard')"
-              />
-            </div>
-          </div>
+          <UButton
+            label="Dashboard"
+            color="neutral"
+            variant="outline"
+            @click="navigateTo('/dashboard')"
+          />
         </template>
       </UHeader>
       <USeparator class="opacity-0 h-10" />
@@ -195,17 +158,17 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                   <div class="flex justify-between">
                     <div class="text-lg ltr">Name</div>
                     <div class="text-lg text-right rtl">
-                      {{ valueSkeleton.txFName }} {{ valueSkeleton.txLName }}
+                      {{ dbValueLogin.txFName }} {{ dbValueLogin.txLName }}
                     </div>
                   </div>
-                  <div :key="`contacts-${logged_in ? 'in' : 'out'}`">
+                  <div>
                     <div
-                      v-for="(value, key, index) in valueSkeleton"
+                      v-for="(value, key, index) in dbValueLogin"
                       :key="`${key}-${index}-${String(value)}`"
                       class="flex justify-between"
                     >
                       <div
-                        v-if="valueSkeleton[key] !== undefined"
+                        v-if="dbValueLogin[key] !== undefined"
                         class="text-lg ltr"
                       >
                         {{ keyMap[key] }}
@@ -252,40 +215,16 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                       </div>
                     </div>
                   </div>
-                  <div v-if="!logged_in" class="flex justify-between">
-                    <div class="text-lg ltr">Contact</div>
-                    <div class="w-30 h-7 bg-gray-300 blur-sm" />
-                  </div>
                 </div>
               </div>
               <div class="my-2">
-                <div v-if="logged_in">
+                <div>
                   <UButton
                     style="background-color: #002fbd; color: #fcfdfe"
                     class="w-full text-lg"
                   >
                     <div class="w-full text-center">Connect</div></UButton
                   >
-                </div>
-                <div v-else>
-                  <UModal :ui="{ content: 'w-1/4' }">
-                    <UButton class="w-full text-lg">
-                      <div class="w-full text-center">Connect</div></UButton
-                    >
-                    <template #content>
-                      <div
-                        class="flex flex-col items-center justify-center gap-4 p-4"
-                      >
-                        <UAuthForm
-                          title="Login"
-                          description="Log in with Google or Insert your email"
-                          :fields="fields"
-                          :providers="providers"
-                          @submit="onSubmit"
-                        />
-                      </div>
-                    </template>
-                  </UModal>
                 </div>
               </div>
             </div>
