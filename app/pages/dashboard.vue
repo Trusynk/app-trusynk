@@ -26,8 +26,8 @@ if (error) {
   console.log(error);
 }
 const schema = z.object({
-  txFName: z.string().max(80),
-  txLName: z.string().max(80),
+  txFName: z.string().nonempty("Must not be empty").max(80),
+  txLName: z.string().nonempty("Must not be empty").max(80),
   txBusinessName: z.string().max(180),
   txEmail: z.email("Invalid email"),
   txPhoneNumber: nullify(z.string().max(16)).nullable(),
@@ -37,7 +37,7 @@ const schema = z.object({
   txFacebookURL: nullifyableUrl,
   txThreadsURL: nullifyableUrl,
   txUsername: z
-    .string()
+    .string("Must be a Valid Username")
     .max(40)
     .regex(/^[A-Za-z0-9\-_.~]+$/, "Must be URL Safe")
     .toLowerCase(),
@@ -78,6 +78,11 @@ if (data) {
 
 onMounted(() => {
   isHydrated.value = true;
+  console.log(data.user?.id);
+});
+
+definePageMeta({
+  middleware: ["auth"],
 });
 
 async function onSubmit() {
@@ -96,8 +101,12 @@ async function onSubmit() {
   if (!userError) {
     const { error } = await $supabase
       .from("user")
-      .upsert({ ...state, txUsername: state.txUsername })
-      .eq("uiUserId", userID.value);
+      .upsert({
+        ...state,
+        txUsername: state.txUsername,
+        uiUserId: data.user?.id,
+      })
+      .eq("uiUserId", data.user?.id);
     if (error) {
       toast.add({ title: "Something went wrong" });
       console.log(error);

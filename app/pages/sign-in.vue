@@ -74,7 +74,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       console.log(emailAddress);
 
       const { data, error } = await $supabase
-        .from("users")
+        .from("user")
         .select("txUsername")
         .eq("txUsername", uploadData.username);
 
