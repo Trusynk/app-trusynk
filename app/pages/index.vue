@@ -3,11 +3,16 @@ import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import { useRouter } from "#app";
 import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
+import {
+  GoogleSignInButton,
+  type CredentialResponse,
+} from "vue3-google-signin";
 
 const { $supabase } = useNuxtApp();
 const loading = ref(true);
 const logged_in = ref(false);
 const isHydrated = ref(false);
+const toast = useToast();
 
 const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
@@ -47,15 +52,15 @@ const fields: AuthFormField[] = [
   },
 ];
 
-const providers = [
-  {
-    label: "Google",
-    icon: "i-simple-icons-google",
-    onClick: () => {
-      console.log("unimplemented");
-    },
-  },
-];
+// const providers = [
+//   {
+//     label: "Google",
+//     icon: "i-simple-icons-google",
+//     onClick: () => {
+//       console.log("unimplemented");
+//     },
+//   },
+// ];
 
 const schema = z.object({
   email: z.email("Invalid email"),
@@ -78,9 +83,24 @@ onMounted(() => {
   isHydrated.value = true;
 });
 
+async function handleLoginSuccess(response: CredentialResponse) {
+  const { error } = await $supabase.auth.signInWithIdToken({
+    provider: "google",
+    token: response.credential || "",
+  });
+  if (error) {
+    toast.add({ title: "Something Went Wrong" });
+  }
+  navigateTo("/dashboard");
+}
+
+// handle an error event
+async function handleLoginError() {
+  toast.add({ title: "Something Went Wrong" });
+}
+
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
   const router = useRouter();
-  const toast = useToast();
 
   try {
     const { email } = payload.data;
@@ -131,9 +151,17 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                     title="Login"
                     description="Log in with Google or Insert your email"
                     :fields="fields"
-                    :providers="providers"
                     @submit="onSubmit"
-                  />
+                  >
+                    <template #providers>
+                      <div class="flex justify-center">
+                        <GoogleSignInButton
+                          @success="handleLoginSuccess"
+                          @error="handleLoginError"
+                        />
+                      </div>
+                    </template>
+                  </UAuthForm>
                 </div>
               </template>
             </UModal>
