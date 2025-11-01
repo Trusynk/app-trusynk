@@ -120,7 +120,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         <template #title> Trusynk </template>
 
         <template #right>
-          <div v-if="!logged_in">
+          <div v-if="!logged_in && isHydrated">
             <UModal :ui="{ content: 'w-1/4' }">
               <UButton label="Login" color="neutral" variant="outline" />
               <template #content>
@@ -138,7 +138,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
               </template>
             </UModal>
           </div>
-          <div v-else>
+          <div v-else-if="isHydrated">
             <UButton
               label="Dashboard"
               color="neutral"
@@ -252,7 +252,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
                 </div>
               </div>
             </div>
-            <div v-else-if="logged_in && !userData">
+            <div v-else-if="logged_in && userData.length === 0">
               <div class="text-xl text-center font-bold my-2">Trusynk</div>
               <div class="text-center">
                 Visit the dashboard to add your card information
