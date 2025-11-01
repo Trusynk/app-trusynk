@@ -17,18 +17,20 @@ const nullifyableUrl = z
 const open = ref(false);
 const modalOpen = ref(false);
 const toast = useToast();
-const userID = ref(null);
+const userID = ref("");
 
 const { data, error } = await $supabase.auth.getUser();
 console.log(data);
 if (error) {
   console.log(error);
 }
+
+const disallowedUsername = ["sign-in", "test", "login", "dashboard"];
 const schema = z.object({
   txFName: z.string().nonempty("Must not be empty").max(80),
   txLName: z.string().nonempty("Must not be empty").max(80),
   txBusinessName: z.string().max(180),
-  txEmail: z.email("Invalid email"),
+  txEmail: z.email("Invalid email").nullable(),
   txPhoneNumber: nullify(z.string().max(16)).nullable(),
   txWebsiteURL: nullifyableUrl,
   txInstagramURL: nullifyableUrl,
@@ -39,7 +41,11 @@ const schema = z.object({
     .string("Must be a Valid Username")
     .max(40)
     .regex(/^[A-Za-z0-9\-_.~]+$/, "Must be URL Safe")
-    .toLowerCase(),
+    .toLowerCase()
+    .refine(
+      (str) => disallowedUsername.some((text) => str.includes(text)),
+      "Choose another one"
+    ),
 });
 
 type Schema = z.infer<typeof schema>;
@@ -47,22 +53,22 @@ type Schema = z.infer<typeof schema>;
 let state = reactive({
   txFName: "",
   txLName: "",
-  txBusinessName: data.user?.user_metadata.company,
-  txEmail: data.user?.email,
+  txBusinessName: data.user?.user_metadata.company || "",
+  txEmail: data.user?.email || null,
   txPhoneNumber: "",
   txWebsiteURL: "",
   txInstagramURL: "",
   txLinkedInURL: "",
   txFacebookURL: "",
   txThreadsURL: "",
-  txUsername: data.user?.user_metadata.username,
+  txUsername: data.user?.user_metadata.username || "",
 });
 
 if (data) {
   const { data: userData, error: userError } = await $supabase
     .from("user")
     .select("*")
-    .eq("uiUserId", data.user?.id);
+    .eq("uiUserId", data.user?.id || "");
 
   if (userError) {
     console.log(userError);
@@ -70,8 +76,20 @@ if (data) {
 
   if (userData && userData.length > 0 && userData[0]) {
     const supabaseState = userData[0];
-    state = supabaseState;
-    userID.value = supabaseState.uiUserId;
+    state = {
+      txFName: supabaseState.txFName ?? "",
+      txLName: supabaseState.txLName ?? "",
+      txBusinessName: supabaseState.txBusinessName ?? "",
+      txEmail: supabaseState.txEmail ?? null,
+      txPhoneNumber: supabaseState.txPhoneNumber ?? "",
+      txWebsiteURL: supabaseState.txWebsiteURL ?? "",
+      txInstagramURL: supabaseState.txInstagramURL ?? "",
+      txLinkedInURL: supabaseState.txLinkedInURL ?? "",
+      txFacebookURL: supabaseState.txFacebookURL ?? "",
+      txThreadsURL: supabaseState.txThreadsURL ?? "",
+      txUsername: supabaseState.txUsername ?? "",
+    };
+    userID.value = supabaseState.uiUserId || "";
   }
 }
 
@@ -89,7 +107,7 @@ async function onSubmit() {
     .from("user")
     .select("txUsername")
     .eq("txUsername", state.txUsername)
-    .neq("uiUserId", data.user?.id);
+    .neq("uiUserId", data.user?.id || "");
   if (userError) {
     toast.add({ title: "Something went wrong" });
     console.log(userError);
@@ -105,7 +123,7 @@ async function onSubmit() {
         txUsername: state.txUsername,
         uiUserId: data.user?.id,
       })
-      .eq("uiUserId", data.user?.id);
+      .eq("uiUserId", data.user?.id || "");
     if (error) {
       toast.add({ title: "Something went wrong" });
       console.log(error);
@@ -148,7 +166,7 @@ async function logout() {
       </template>
     </UHeader>
     <div v-if="isHydrated" class="text-center mt-4">
-      Your Trusynk Link is on trusynk.com/profile/{{ state.txUsername }}
+      Your Trusynk Link is on trusynk.com/{{ state.txUsername }}
     </div>
     <div v-else class="text-center mt-4">Hold on we are still loading</div>
     <div class="flex items-center justify-evenly mt-6">
