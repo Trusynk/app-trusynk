@@ -2,7 +2,6 @@
 import z from "zod";
 
 const isHydrated = ref(false);
-// TODO : protect to be only viewed with login
 const nullify = <T extends z.ZodTypeAny>(schema: T) =>
   schema.transform((v) => (v === "" ? null : v));
 

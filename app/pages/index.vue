@@ -8,7 +8,7 @@ const loading = ref(true);
 
 const isHydrated = ref(false);
 
-// TODO : refactor to dynamic ID
+// TODO : use as dashboard
 const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
   loading.value = false;
