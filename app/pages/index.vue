@@ -3,12 +3,12 @@ import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 import { useRouter } from "#app";
 import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
+
 const { $supabase } = useNuxtApp();
 const loading = ref(true);
 const logged_in = ref(false);
 const isHydrated = ref(false);
 
-// TODO : use as dashboard
 const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
   loading.value = false;
@@ -29,7 +29,10 @@ const { data: userData, error: userError } = await $supabase
   .eq("uiUserId", data.session?.user.id || nullUuid);
 
 if (userError) {
-  throw createError({ status: 404, message: userError.message });
+  throw createError({
+    status: 500,
+    message: "Something went wrong when querying user data",
+  });
 }
 
 const displayData = userData[0];
@@ -57,19 +60,6 @@ const providers = [
 const schema = z.object({
   email: z.email("Invalid email"),
 });
-
-// const dbValueLogin = {
-//   txFName: "Andrew",
-//   txLName: "V",
-//   txBusinessName: "Trusynk",
-//   txEmail: "connect@trusynk.com",
-//   txPhoneNumber: "+6287788895099",
-//   txWebsiteUrl: "www.trusynk.com",
-//   txInstagramURL: "instagram.com/trusynk",
-//   txLinkedinURL: "linkedin.com/company/trusynk",
-//   txFacebookURL: "facebook.com/trusynk",
-//   txThreadsURL: undefined,
-// };
 
 const keyMap: Record<string, string> = {
   txBusinessName: "Business Name",
@@ -101,7 +91,6 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     const res = await $fetch(`/api/check-email?${params.toString()}`, {
       method: "get",
     });
-    console.log(res);
     if ("exist" in res) {
       if (res.exist) {
         await router.push({

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import z from "zod";
+const { $supabase } = useNuxtApp();
 
 const isHydrated = ref(false);
+const open = ref(false);
+const modalOpen = ref(false);
+const userID = ref("");
+const toast = useToast();
+
 const nullify = <T extends z.ZodTypeAny>(schema: T) =>
   schema.transform((v) => (v === "" ? null : v));
 
-const { $supabase } = useNuxtApp();
 const nullifyableUrl = z
   .string()
   .transform((v) => (v === "" ? null : v))
@@ -14,15 +19,12 @@ const nullifyableUrl = z
     message: "Invalid URL",
   });
 
-const open = ref(false);
-const modalOpen = ref(false);
-const toast = useToast();
-const userID = ref("");
-
 const { data, error } = await $supabase.auth.getUser();
-console.log(data);
 if (error) {
-  console.log(error);
+  throw createError({
+    status: 500,
+    message: "Something went wrong with the auth",
+  });
 }
 
 const disallowedUsername = ["sign-in", "test", "login", "dashboard"];
@@ -48,8 +50,6 @@ const schema = z.object({
     ),
 });
 
-type Schema = z.infer<typeof schema>;
-
 let state = reactive({
   txFName: "",
   txLName: "",
@@ -71,7 +71,10 @@ if (data) {
     .eq("uiUserId", data.user?.id || "");
 
   if (userError) {
-    console.log(userError);
+    throw createError({
+      status: 500,
+      message: "Something went wrong when querying user data",
+    });
   }
 
   if (userData && userData.length > 0 && userData[0]) {
@@ -95,7 +98,6 @@ if (data) {
 
 onMounted(() => {
   isHydrated.value = true;
-  console.log(data.user?.id);
 });
 
 definePageMeta({
@@ -134,6 +136,7 @@ async function logout() {
   const { error } = await $supabase.auth.signOut();
   if (error) {
     toast.add({ title: "Something Went Wrong" });
+    console.log(error);
   } else {
     navigateTo("/", { replace: true });
   }

@@ -45,6 +45,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       navigateTo("/");
     }
   } catch (error) {
+    toast.add({ title: "Something went wrong" });
     console.log(error);
   }
 }

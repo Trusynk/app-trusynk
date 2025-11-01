@@ -71,15 +71,16 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
       toast.add({ title: "Email Error", description: "Email is missing" });
     } else {
       uploadData.email = emailAddress.toString() ?? "";
-      console.log(emailAddress);
 
       const { data, error } = await $supabase
         .from("user")
         .select("txUsername")
         .eq("txUsername", uploadData.username);
 
-      if (error) console.log(error);
-      else if (data.length > 0) {
+      if (error) {
+        toast.add({ title: "Something went wrong" });
+        console.log(error);
+      } else if (data.length > 0) {
         toast.add({ title: "Username already taken!" });
       } else {
         const { error } = await $supabase.auth.signUp({
@@ -94,12 +95,14 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
         });
         if (error) {
           toast.add({ title: "Something went wrong" });
+          console.log(error);
         } else {
           toast.add({ title: "Check Your email for confirmation!" });
         }
       }
     }
   } catch (error) {
+    toast.add({ title: "Something went wrong" });
     console.log(error);
   }
 }

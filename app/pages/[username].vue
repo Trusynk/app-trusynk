@@ -4,11 +4,10 @@ import { useRouter } from "#app";
 import { useRoute } from "vue-router";
 // import logoUrl from "../../public/light-logomark.png";
 import z from "zod";
-const { $supabase } = useNuxtApp();
 const loading = ref(true);
 const logged_in = ref(false);
-
 const isHydrated = ref(false);
+const { $supabase } = useNuxtApp();
 
 const { data, error } = await $supabase.auth.getSession();
 if (data.session) {
@@ -19,8 +18,6 @@ if (data.session) {
 
   if (error) {
     throw createError({ status: 500, message: "Something went wrong" });
-  } else {
-    console.log("No user logged in");
   }
 }
 
